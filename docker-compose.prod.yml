@@ -1,0 +1,138 @@
+# ============================================================================
+# DOCKER COMPOSE - PRODUCTION ENVIRONMENT
+# ============================================================================
+# Optimized for production:
+# - No source code mounting
+# - Proper resource limits
+# - Production environment settings
+#
+# USAGE:
+#   docker-compose -f docker-compose.prod.yml up -d
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # GO APPLICATION
+  # ==========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-boilerplate-app
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_PORT=8080
+      - APP_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRY_HOURS=${JWT_EXPIRY_HOURS:-72}
+      - LOG_LEVEL=info
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-boilerplate}
+      - DB_SSLMODE=require
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=0
+      - RATE_LIMIT_RPS=100
+      - RATE_LIMIT_BURST=200
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - boilerplate-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ==========================================================================
+  # POSTGRESQL DATABASE
+  # ==========================================================================
+  postgres:
+    image: postgres:14-alpine
+    container_name: go-boilerplate-postgres
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME:-boilerplate}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - boilerplate-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-boilerplate}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ==========================================================================
+  # REDIS CACHE
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: go-boilerplate-redis
+    volumes:
+      - redis_data:/data
+    restart: always
+    networks:
+      - boilerplate-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+
+# ==========================================================================
+# NETWORKS
+# ==========================================================================
+networks:
+  boilerplate-network:
+    driver: bridge
+
+# ==========================================================================
+# VOLUMES
+# ==========================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

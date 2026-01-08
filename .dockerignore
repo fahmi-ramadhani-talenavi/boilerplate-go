@@ -1,0 +1,51 @@
+# ============================================================================
+# DOCKER IGNORE
+# ============================================================================
+# Files to exclude from Docker build context for smaller/faster builds
+
+# Git
+.git
+.gitignore
+
+# Environment files (use docker-compose env vars instead)
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# Build artifacts
+dist/
+tmp/
+coverage.out
+coverage.html
+
+# Documentation
+*.md
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Binary (rebuilt in container)
+api
