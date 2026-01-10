@@ -1,35 +1,33 @@
 package middleware
 
 import (
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 )
 
 // SecurityHeaders adds security-related HTTP headers
-func SecurityHeaders() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			// Prevent MIME type sniffing
-			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
+func SecurityHeaders() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Prevent MIME type sniffing
+		c.Header("X-Content-Type-Options", "nosniff")
 
-			// Prevent clickjacking
-			c.Response().Header().Set("X-Frame-Options", "DENY")
+		// Prevent clickjacking
+		c.Header("X-Frame-Options", "DENY")
 
-			// Enable XSS filter
-			c.Response().Header().Set("X-XSS-Protection", "1; mode=block")
+		// Enable XSS filter
+		c.Header("X-XSS-Protection", "1; mode=block")
 
-			// Strict Transport Security (HSTS) - 1 year
-			c.Response().Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		// Strict Transport Security (HSTS) - 1 year
+		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
-			// Content Security Policy
-			c.Response().Header().Set("Content-Security-Policy", "default-src 'self'")
+		// Content Security Policy
+		c.Header("Content-Security-Policy", "default-src 'self'")
 
-			// Referrer Policy
-			c.Response().Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		// Referrer Policy
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 
-			// Permissions Policy
-			c.Response().Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+		// Permissions Policy
+		c.Header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
 
-			return next(c)
-		}
+		c.Next()
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 	"github.com/user/go-boilerplate/pkg/apperror"
 )
 
@@ -92,24 +92,23 @@ func (rl *rateLimiter) allow(ip string) bool {
 }
 
 // RateLimiter returns a rate limiting middleware
-func RateLimiter(config RateLimiterConfig) echo.MiddlewareFunc {
+func RateLimiter(config RateLimiterConfig) gin.HandlerFunc {
 	limiter := newRateLimiter(config)
 
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			ip := c.RealIP()
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
 
-			if !limiter.allow(ip) {
-				appErr := apperror.RateLimitExceeded()
-				return c.JSON(http.StatusTooManyRequests, map[string]any{
-					"error": map[string]any{
-						"code":    appErr.Code,
-						"message": appErr.Message,
-					},
-				})
-			}
-
-			return next(c)
+		if !limiter.allow(ip) {
+			appErr := apperror.RateLimitExceeded()
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": gin.H{
+					"code":    appErr.Code,
+					"message": appErr.Message,
+				},
+			})
+			return
 		}
+
+		c.Next()
 	}
 }

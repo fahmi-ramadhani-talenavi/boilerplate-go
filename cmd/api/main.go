@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -25,22 +26,35 @@ import (
 // ============================================================================
 
 // main is the application entry point.
-// It initializes all dependencies and starts the HTTP server.
+// It handles CLI commands or starts the HTTP server.
 //
-// STARTUP FLOW:
+// CLI COMMANDS:
+// - migrate: Run database migrations
+// - migrate:rollback [count]: Rollback migrations (default: 1)
+// - seed: Run database seeders
+// - seed:reset: Reset and re-run seeders
+//
+// SERVER STARTUP FLOW:
 // 1. Load configuration from environment
 // 2. Initialize structured logger
 // 3. Connect to PostgreSQL database
-// 4. Run database migrations
-// 5. Run database seeders
-// 6. Start HTTP server
-// 7. Wait for shutdown signal
-// 8. Graceful shutdown with timeout
+// 4. Start HTTP server (no auto migration/seeder)
+// 5. Wait for shutdown signal
+// 6. Graceful shutdown with timeout
 //
 // SIGNALS:
 // - SIGINT (Ctrl+C): Graceful shutdown
 // - SIGTERM: Graceful shutdown (container orchestration)
 func main() {
+	// ========================================================================
+	// CLI COMMAND HANDLING
+	// ========================================================================
+	// Check if running as CLI command
+	if len(os.Args) > 1 {
+		handleCLI()
+		return
+	}
+
 	// ========================================================================
 	// CONFIGURATION
 	// ========================================================================
@@ -71,25 +85,9 @@ func main() {
 	}
 	logger.Log.Info("Database connection established")
 
-	// ========================================================================
-	// MIGRATIONS
-	// ========================================================================
-	// Run database migrations to ensure schema is up to date
-	// Migrations are tracked in schema_migrations table
-	migrator := migration.NewMigrator(db)
-	if err := migrator.Run(); err != nil {
-		logger.Log.Fatal("Failed to run migrations", zap.Error(err))
-	}
-
-	// ========================================================================
-	// SEEDERS
-	// ========================================================================
-	// Run database seeders to populate initial data
-	// Seeders are tracked in schema_seeders table
-	dbSeeder := seeder.NewSeeder(db)
-	if err := dbSeeder.Run(); err != nil {
-		logger.Log.Fatal("Failed to run seeders", zap.Error(err))
-	}
+	// NOTE: Migration and seeder are now CLI-only.
+	// Run: go run cmd/api/main.go migrate
+	// Run: go run cmd/api/main.go seed
 
 	// ========================================================================
 	// REDIS CONNECTION
@@ -156,6 +154,108 @@ func main() {
 	}
 
 	logger.Log.Info("Server exited gracefully")
+}
+
+// ============================================================================
+// CLI COMMAND HANDLER
+// ============================================================================
+
+// handleCLI processes CLI commands for database operations.
+// This allows migrations and seeders to be run separately from the server.
+//
+// COMMANDS:
+// - migrate: Run all pending migrations
+// - migrate:rollback [count]: Rollback last N migrations (default: 1)
+// - seed: Run all pending seeders
+// - seed:reset: Reset seeder records and re-run all seeders
+func handleCLI() {
+	command := os.Args[1]
+
+	// Initialize config and logger for CLI
+	cfg := config.LoadConfig()
+	logger.InitLogger(cfg.LogLevel, cfg.AppEnv)
+	defer logger.Log.Sync()
+
+	// Connect to database
+	db, err := initDatabase(cfg)
+	if err != nil {
+		logger.Log.Fatal("Failed to connect to database", zap.Error(err))
+	}
+	defer func() {
+		sqlDB, _ := db.DB()
+		sqlDB.Close()
+	}()
+
+	switch command {
+	case "migrate":
+		// Run all pending migrations
+		migrator := migration.NewMigrator(db)
+		if err := migrator.Run(); err != nil {
+			logger.Log.Fatal("Migration failed", zap.Error(err))
+		}
+		fmt.Println("✓ Migrations completed successfully")
+
+	case "migrate:rollback":
+		// Rollback migrations
+		count := 1
+		if len(os.Args) > 2 {
+			if n, err := strconv.Atoi(os.Args[2]); err == nil {
+				count = n
+			}
+		}
+		migrator := migration.NewMigrator(db)
+		if err := migrator.Rollback(count); err != nil {
+			logger.Log.Fatal("Rollback failed", zap.Error(err))
+		}
+		fmt.Printf("✓ Rolled back %d migration(s) successfully\n", count)
+
+	case "seed":
+		// Run all pending seeders
+		dbSeeder := seeder.NewSeeder(db)
+		if err := dbSeeder.Run(); err != nil {
+			logger.Log.Fatal("Seeding failed", zap.Error(err))
+		}
+		fmt.Println("✓ Seeders completed successfully")
+
+	case "seed:reset":
+		// Reset and re-run seeders
+		dbSeeder := seeder.NewSeeder(db)
+		if err := dbSeeder.Reset(); err != nil {
+			logger.Log.Fatal("Seeder reset failed", zap.Error(err))
+		}
+		if err := dbSeeder.Run(); err != nil {
+			logger.Log.Fatal("Seeding failed", zap.Error(err))
+		}
+		fmt.Println("✓ Seeders reset and re-run successfully")
+
+	default:
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+// printUsage displays CLI help information.
+func printUsage() {
+	fmt.Println(`
+Go Boilerplate CLI
+
+Usage:
+  go run cmd/api/main.go [command]
+
+Commands:
+  (none)             Start the HTTP server
+  migrate            Run all pending database migrations
+  migrate:rollback   Rollback the last migration (add number for more)
+  seed               Run all pending database seeders
+  seed:reset         Reset seeder records and re-run all seeders
+
+Examples:
+  go run cmd/api/main.go                  # Start server
+  go run cmd/api/main.go migrate          # Run migrations
+  go run cmd/api/main.go migrate:rollback 3  # Rollback 3 migrations
+  go run cmd/api/main.go seed             # Run seeders
+  go run cmd/api/main.go seed:reset       # Reset and re-run seeders
+`)
 }
 
 // ============================================================================

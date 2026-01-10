@@ -46,7 +46,7 @@ A production-ready Go boilerplate following Clean Architecture principles with b
 ## Getting Started
 
 ### Prerequisites
-- Go 1.22+
+- Go 1.25+
 - PostgreSQL 14+
 
 ### Installation
@@ -67,8 +67,37 @@ docker run -d --name postgres -p 5432:5432 \
   -e POSTGRES_DB=boilerplate \
   postgres:14
 
+# Run migrations
+go run cmd/api/main.go migrate
+
+# Run seeders
+go run cmd/api/main.go seed
+
 # Run the application
 go run cmd/api/main.go
+```
+
+## CLI Commands
+
+### Database Migration
+```bash
+# Run all pending migrations
+go run cmd/api/main.go migrate
+
+# Rollback last migration
+go run cmd/api/main.go migrate:rollback
+
+# Rollback last 3 migrations
+go run cmd/api/main.go migrate:rollback 3
+```
+
+### Database Seeding
+```bash
+# Run all pending seeders
+go run cmd/api/main.go seed
+
+# Reset and re-run all seeders
+go run cmd/api/main.go seed:reset
 ```
 
 ## API Endpoints

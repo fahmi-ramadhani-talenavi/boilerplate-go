@@ -35,6 +35,13 @@ type Config struct {
 	// Rate Limiting
 	RateLimitRPS   int `mapstructure:"RATE_LIMIT_RPS"`
 	RateLimitBurst int `mapstructure:"RATE_LIMIT_BURST"`
+
+	// S3 / MinIO
+	S3Region    string `mapstructure:"S3_REGION"`
+	S3Bucket    string `mapstructure:"S3_BUCKET"`
+	S3AccessKey string `mapstructure:"S3_ACCESS_KEY"`
+	S3SecretKey string `mapstructure:"S3_SECRET_KEY"`
+	S3Endpoint  string `mapstructure:"S3_ENDPOINT"` // Optional: for MinIO/LocalStack
 }
 
 func LoadConfig() *Config {

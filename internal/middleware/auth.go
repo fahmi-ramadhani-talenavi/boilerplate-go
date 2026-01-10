@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/labstack/echo/v4"
 	"github.com/user/go-boilerplate/pkg/apperror"
 	"github.com/user/go-boilerplate/pkg/logger"
 )
@@ -20,70 +20,73 @@ type JWTClaims struct {
 
 // JWTConfig holds JWT middleware configuration
 type JWTConfig struct {
-	Secret        string
-	SkipPaths     []string
-	TokenLookup   string // "header:Authorization"
+	Secret    string
+	SkipPaths []string
 }
 
 // JWT returns a JWT authentication middleware
-func JWT(config JWTConfig) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			// Check if path should be skipped
-			path := c.Request().URL.Path
-			for _, skipPath := range config.SkipPaths {
-				if strings.HasPrefix(path, skipPath) {
-					return next(c)
-				}
+func JWT(config JWTConfig) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Check if path should be skipped
+		path := c.Request.URL.Path
+		for _, skipPath := range config.SkipPaths {
+			if strings.HasPrefix(path, skipPath) {
+				c.Next()
+				return
 			}
-
-			// Extract token from Authorization header
-			authHeader := c.Request().Header.Get("Authorization")
-			if authHeader == "" {
-				return respondError(c, apperror.Unauthorized("Missing authorization header"))
-			}
-
-			parts := strings.Split(authHeader, " ")
-			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-				return respondError(c, apperror.Unauthorized("Invalid authorization header format"))
-			}
-
-			tokenString := parts[1]
-
-			// Parse and validate token
-			token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (any, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, apperror.Unauthorized("Invalid signing method")
-				}
-				return []byte(config.Secret), nil
-			})
-
-			if err != nil {
-				if strings.Contains(err.Error(), "expired") {
-					return respondError(c, apperror.New(apperror.ErrCodeTokenExpired, "Token has expired", http.StatusUnauthorized))
-				}
-				return respondError(c, apperror.New(apperror.ErrCodeInvalidToken, "Invalid token", http.StatusUnauthorized))
-			}
-
-			claims, ok := token.Claims.(*JWTClaims)
-			if !ok || !token.Valid {
-				return respondError(c, apperror.Unauthorized("Invalid token claims"))
-			}
-
-			// Add user info to context
-			ctx := context.WithValue(c.Request().Context(), logger.UserIDKey, claims.UserID)
-			c.SetRequest(c.Request().WithContext(ctx))
-			c.Set("user_id", claims.UserID)
-			c.Set("email", claims.Email)
-
-			return next(c)
 		}
+
+		// Extract token from Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			respondError(c, apperror.Unauthorized("Missing authorization header"))
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+			respondError(c, apperror.Unauthorized("Invalid authorization header format"))
+			return
+		}
+
+		tokenString := parts[1]
+
+		// Parse and validate token
+		token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (any, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, apperror.Unauthorized("Invalid signing method")
+			}
+			return []byte(config.Secret), nil
+		})
+
+		if err != nil {
+			if strings.Contains(err.Error(), "expired") {
+				respondError(c, apperror.New(apperror.ErrCodeTokenExpired, "Token has expired", http.StatusUnauthorized))
+				return
+			}
+			respondError(c, apperror.New(apperror.ErrCodeInvalidToken, "Invalid token", http.StatusUnauthorized))
+			return
+		}
+
+		claims, ok := token.Claims.(*JWTClaims)
+		if !ok || !token.Valid {
+			respondError(c, apperror.Unauthorized("Invalid token claims"))
+			return
+		}
+
+		// Add user info to context
+		ctx := context.WithValue(c.Request.Context(), logger.UserIDKey, claims.UserID)
+		c.Request = c.Request.WithContext(ctx)
+		c.Set("user_id", claims.UserID)
+		c.Set("email", claims.Email)
+
+		c.Next()
 	}
 }
 
-func respondError(c echo.Context, appErr *apperror.AppError) error {
-	return c.JSON(appErr.HTTPStatus, map[string]any{
-		"error": map[string]any{
+func respondError(c *gin.Context, appErr *apperror.AppError) {
+	c.AbortWithStatusJSON(appErr.HTTPStatus, gin.H{
+		"error": gin.H{
 			"code":    appErr.Code,
 			"message": appErr.Message,
 		},

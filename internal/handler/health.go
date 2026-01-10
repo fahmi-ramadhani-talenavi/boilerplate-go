@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 	"github.com/user/go-boilerplate/internal/dto"
 	"gorm.io/gorm"
 )
@@ -16,14 +16,14 @@ func NewHealthHandler(db *gorm.DB) *HealthHandler {
 	return &HealthHandler{db: db}
 }
 
-func (h *HealthHandler) RegisterRoutes(e *echo.Echo) {
-	e.GET("/health", h.Health)
-	e.GET("/ready", h.Ready)
+func (h *HealthHandler) RegisterRoutes(r *gin.Engine) {
+	r.GET("/health", h.Health)
+	r.GET("/ready", h.Ready)
 }
 
 // Health returns basic health status
-func (h *HealthHandler) Health(c echo.Context) error {
-	return c.JSON(http.StatusOK, dto.SuccessResponse{
+func (h *HealthHandler) Health(c *gin.Context) {
+	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "OK",
 		Data: map[string]string{
 			"status": "healthy",
@@ -32,28 +32,30 @@ func (h *HealthHandler) Health(c echo.Context) error {
 }
 
 // Ready checks if the service is ready (including dependencies)
-func (h *HealthHandler) Ready(c echo.Context) error {
+func (h *HealthHandler) Ready(c *gin.Context) {
 	// Check database connection
 	sqlDB, err := h.db.DB()
 	if err != nil {
-		return c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{
+		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{
 			Error: dto.ErrorDetail{
 				Code:    "SERVICE_UNAVAILABLE",
 				Message: "Database connection unavailable",
 			},
 		})
+		return
 	}
 
 	if err := sqlDB.Ping(); err != nil {
-		return c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{
+		c.JSON(http.StatusServiceUnavailable, dto.ErrorResponse{
 			Error: dto.ErrorDetail{
 				Code:    "SERVICE_UNAVAILABLE",
 				Message: "Database ping failed",
 			},
 		})
+		return
 	}
 
-	return c.JSON(http.StatusOK, dto.SuccessResponse{
+	c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "OK",
 		Data: map[string]string{
 			"status":   "ready",

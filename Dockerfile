@@ -12,7 +12,7 @@
 # -----------------------------------------------------------------------------
 # STAGE 1: BUILD
 # -----------------------------------------------------------------------------
-FROM golang:1.18-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install required packages for CGO (if needed) and git
 RUN apk add --no-cache git ca-certificates tzdata
@@ -40,7 +40,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
 # -----------------------------------------------------------------------------
 # STAGE 2: RUNTIME
 # -----------------------------------------------------------------------------
-FROM alpine:3.18
+FROM alpine:3.21
 
 # Install ca-certificates for HTTPS and tzdata for timezone support
 RUN apk --no-cache add ca-certificates tzdata
