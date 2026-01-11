@@ -1,0 +1,15 @@
+INSERT INTO mst_legal_entities (id, description, created_by, updated_by, created_at, updated_at, deleted_at) VALUES
+('a0d41ffa-a77f-547a-bf80-ccd7d25d263b', 'Perseroan Terbatas', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('cb0801aa-81a2-57ff-9b1a-8bb94b464c9e', 'Perseroan Terbatas Terbuka', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('43775e50-e3a2-5829-898b-cbcdb6e39ac6', 'BUMN (Perjan/Perum/Persero)', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('8f0cb6fa-ee39-52ed-ad93-dd0636eb705e', 'Yayasan', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', NULL, '2023-04-17 22:53:53', '2024-03-28 17:05:46', NULL),
+('5e41d64b-7a22-5f37-8cb7-bc1ec6e8dce2', 'Lembaga Swadaya Masyarakat', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('3c41ff41-b4f0-5225-8527-0edd6c53192c', 'Organisasi', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('357cadc5-700e-5828-8437-e29f2c86e999', 'Usaha Dagang', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('581a45a2-7f3a-5501-acfe-e42f120d43cf', 'Koperasi', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('d3f6a72b-d49c-5c5f-9334-dae896eb6e99', 'BUMD', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('e0de3a49-8e16-58bb-9552-c9bce1041378', 'Firma / CV', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('148108c7-71db-5e4f-868e-eb1958fc7701', 'Kantor Perwakilan', NULL, NULL, '2023-04-17 22:53:53', '2023-04-17 22:53:53', NULL),
+('564e2900-2ef0-5ae4-aa4a-e615da3caf3c', 'Universitas', NULL, NULL, '2023-11-16 18:21:37', '2023-11-16 18:21:37', NULL),
+('5b019c27-84ba-5bf6-a609-eb9af081d306', 'Dana Pensiun', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2024-07-29 17:48:46', '2024-07-29 17:48:46', NULL),
+('09336ff3-497a-5de7-aa19-54a0918019ea', 'Lainnya', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-11-04 18:55:54', '2025-11-04 18:55:54', NULL);

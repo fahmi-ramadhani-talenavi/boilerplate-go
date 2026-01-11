@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	// Server
+	AppHost string `mapstructure:"APP_HOST"`
 	AppPort string `mapstructure:"APP_PORT"`
 	AppEnv  string `mapstructure:"APP_ENV"`
 
@@ -64,6 +65,9 @@ func LoadConfig() *Config {
 }
 
 func setDefaults(config *Config) {
+	if config.AppHost == "" {
+		config.AppHost = "0.0.0.0"
+	}
 	if config.AppPort == "" {
 		config.AppPort = "8080"
 	}

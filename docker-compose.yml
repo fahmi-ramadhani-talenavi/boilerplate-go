@@ -2,27 +2,29 @@
 # DOCKER COMPOSE - DEVELOPMENT ENVIRONMENT
 # ============================================================================
 # Services:
-# - app: Go application
+# - api: Go HTTP server
+# - cli: Migration & seeder runner (one-shot)
 # - postgres: PostgreSQL database
 # - redis: Redis cache
 #
 # USAGE:
-#   docker-compose up -d        # Start all services
-#   docker-compose logs -f app  # View app logs
-#   docker-compose down         # Stop all services
+#   docker-compose up -d postgres redis    # Start DB & Redis
+#   docker-compose run cli migrate         # Run migrations
+#   docker-compose run cli seed            # Run seeders
+#   docker-compose up -d api               # Start API
 # ============================================================================
 
 version: '3.8'
 
 services:
   # ==========================================================================
-  # GO APPLICATION
+  # GO API SERVER
   # ==========================================================================
-  app:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: go-boilerplate-app
+    container_name: go-boilerplate-api
     ports:
       - "8080:8080"
     environment:
@@ -57,6 +59,34 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    command: ["./api"]
+
+  # ==========================================================================
+  # CLI (MIGRATIONS & SEEDERS)
+  # ==========================================================================
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-boilerplate-cli
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=info
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=boilerplate
+      - DB_SSLMODE=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - boilerplate-network
+    entrypoint: ["./cli"]
+    # Usage: docker-compose run cli migrate
+    #        docker-compose run cli seed
+    #        docker-compose run cli migrate:status
 
   # ==========================================================================
   # POSTGRESQL DATABASE
@@ -103,16 +133,10 @@ services:
       start_period: 5s
     command: redis-server --appendonly yes
 
-# ==========================================================================
-# NETWORKS
-# ==========================================================================
 networks:
   boilerplate-network:
     driver: bridge
 
-# ==========================================================================
-# VOLUMES
-# ==========================================================================
 volumes:
   postgres_data:
     driver: local

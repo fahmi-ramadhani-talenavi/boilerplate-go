@@ -1,0 +1,17 @@
+INSERT INTO mst_fund_sources (id, description, is_personal, created_by, updated_by, created_at, updated_at, deleted_at) VALUES
+('f9bdbf6a-31cf-59c3-9e7a-21b6e82e385b', 'Gaji', true, NULL, NULL, NULL, NULL, NULL),
+('965380f0-68fe-51f9-95fc-ecb5c30dc5e9', 'Hasil Usaha', true, NULL, NULL, NULL, '2023-04-17 23:25:36', '2023-04-17 23:25:36'),
+('816143a5-0570-58eb-8204-bd02012b0132', 'Pendapatan Badan Hukum', false, NULL, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2023-04-17 23:25:36', '2024-02-05 23:00:39', NULL),
+('b91f84b1-a291-5539-8e7a-d2ab67097322', 'Investasi', false, NULL, NULL, '2023-04-17 23:25:36', '2023-04-17 23:25:36', NULL),
+('3c609c8a-ef7b-5970-97c7-e2e067194dc4', 'Komisi/Jasa', false, NULL, NULL, '2023-04-17 23:25:36', '2023-04-17 23:25:36', NULL),
+('12b967d8-bcb7-502f-8d63-8fb653c56733', 'Pendapatan Induk', false, NULL, NULL, '2023-04-17 23:25:36', '2023-04-17 23:25:36', NULL),
+('9115b17f-a27b-55e9-9657-0730fd344187', 'Lainnya', true, NULL, NULL, NULL, NULL, NULL),
+('bb8b76dc-c1dc-57c6-a693-b7e56c73a7c6', 'Lainnya', false, NULL, NULL, NULL, NULL, NULL),
+('32af21ee-738b-5329-b0ce-4155e9378281', 'Warisan', true, NULL, NULL, '2023-11-16 18:22:29', '2023-11-16 18:22:29', NULL),
+('0fbf1c9f-3034-5df7-822a-8a64f7252a1a', 'Bisnis', true, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-11-10 18:38:51', '2025-11-10 18:38:51', NULL),
+('4bd1a8ab-c491-50c1-b083-dfe9d0d1de15', 'Investasi', true, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-11-10 18:39:03', '2025-11-10 18:39:03', NULL),
+('f9be1822-4e5e-5417-87bc-4f4b4b655cc4', 'Komisi/Jasa', true, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-11-10 18:39:23', '2025-11-10 18:39:23', NULL),
+('ca9195c4-92d0-57b2-839d-54025d7d5052', 'Pendapatan Induk', true, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-11-10 18:39:50', '2025-11-10 18:39:50', NULL),
+('9cf000e7-f871-562c-968e-3129ed6f7104', 'Pendapatan Perusahaan', true, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-11-10 18:40:07', '2025-11-10 18:40:07', NULL),
+('de51c97e-97c7-5238-a120-0944a797bbe6', 'Penjualan Investasi', true, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-11-10 18:40:33', '2025-11-10 18:40:33', NULL),
+('a9ff0b1a-1a63-524f-bf1e-010c69b431c9', 'Tabungan Pribadi', true, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-11-10 18:40:52', '2025-11-10 18:40:52', NULL);

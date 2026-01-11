@@ -1,0 +1,6 @@
+INSERT INTO sys_pension_ages (id, effective_date, normal_pension_age, early_pension_age, reference_regulation, description, created_by, updated_by, created_at, updated_at, deleted_at) VALUES
+('2a97db59-0871-5d75-b05d-e987905c7857', '1992-04-20', 40, 30, 'UU No. 11 Tahun 1992 Tentang Dana Pensiun', NULL, NULL, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-04-30 01:21:22', '2025-04-30 01:21:22', NULL),
+('5872ec6f-7147-5161-aeca-3c34a77bcf31', '2023-01-12', 55, 5, 'UU No. 4 Tahun 2003 Tentang Pengembangan Dan Penguatan Sektor Keuangan', NULL, NULL, NULL, '2023-01-12 00:00:00', '2023-01-12 00:00:00', NULL),
+('6abe05f5-7f3d-504e-918f-c174a822469b', '2024-04-26', 50, 5, 'UUPPSK', NULL, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2024-04-26 19:17:35', '2024-07-10 23:03:41', NULL),
+('adb1e759-e2bf-59fe-b26f-8cc9d47e24fa', '2025-06-30', 55, 5, 'UUP2SK', NULL, '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-07-01 00:40:02', '2025-07-01 00:40:02', NULL),
+('82117897-2694-52fc-a17f-dae242543739', '2025-10-28', 55, 5, 'UU No. 11 Tahun 1992 Tentang Dana Pensiun', 'Jika memenuhi persyaratan', 'cf7c710a-8709-5797-b998-55b1a80f2216', '3d8e39e8-b83b-5d1b-8f44-cdeee6c5205f', '2025-10-16 18:53:59', '2025-10-28 18:17:15', NULL);

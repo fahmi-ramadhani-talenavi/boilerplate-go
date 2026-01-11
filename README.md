@@ -1,128 +1,134 @@
-# Go Banking-Grade Boilerplate
+# Go Boilerplate
 
-A production-ready Go boilerplate following Clean Architecture principles with banking-grade security and observability.
+Production-ready modular monolith for financial applications.
 
-## Features
+## Architecture
 
-### Security
-- **Security Headers**: HSTS, CSP, X-Frame-Options, X-Content-Type-Options
-- **Rate Limiting**: Token bucket algorithm with configurable RPS
-- **Request ID Tracking**: UUID-based for audit trails
-- **JWT Authentication**: With expiry configuration and claims extraction
+**Modular Monolith** with clean code structure:
 
-### Observability
-- **Structured Logging**: Zap logger with request ID correlation
-- **Health Checks**: `/health` (liveness) and `/ready` (readiness with DB check)
-- **Structured Errors**: Error codes and messages for API consumers
+```
+cmd/
+├── api/                    # HTTP Server binary
+└── cli/                    # Migration & Seeder binary
 
-### Architecture
-- **Clean Architecture**: Domain → Service → Handler layers
-- **PostgreSQL + GORM**: With soft deletes and audit fields
-- **Graceful Shutdown**: Signal handling for zero-downtime deployments
-- **Input Validation**: go-playground/validator with structured error messages
-
-## Project Structure
-
-```text
-├── cmd/api/              # Application entry point
-├── internal/
-│   ├── app/              # Server setup and DI
-│   ├── config/           # Configuration management
-│   ├── domain/           # Entities and repository interfaces
-│   ├── dto/              # Request/Response data transfer objects
-│   ├── handler/          # HTTP handlers
-│   ├── middleware/       # Security, rate limiting, auth, recovery
-│   ├── repository/       # Data access implementations
-│   └── service/          # Business logic
-├── pkg/
-│   ├── apperror/         # Structured error handling
-│   ├── logger/           # Logging with context
-│   ├── validator/        # Input validation
-│   └── utils/fileutil/   # CSV, XLSX, PDF generation
-├── migrations/           # Database migrations
-└── .github/workflows/    # CI/CD pipeline
+internal/modules/
+├── auth/
+│   ├── entity/user.go
+│   ├── dto/auth.go
+│   ├── repository/user.go
+│   ├── service/auth.go
+│   ├── handler/auth.go
+│   ├── seeder/
+│   ├── migrations/
+│   └── module.go
+├── master/                 # 13 entities (bank, province, etc)
+├── system/                 # 7 entities (role, settings, fees)
+├── transaction/
+├── file/
+└── health/
 ```
 
-## Getting Started
+## Build & Run
 
-### Prerequisites
-- Go 1.25+
-- PostgreSQL 14+
-
-### Installation
 ```bash
-# Clone and enter directory
-cd go-boilerplate
-
-# Copy environment file
-cp .env.example .env
-
 # Install dependencies
 go mod tidy
 
-# Start PostgreSQL (Docker example)
-docker run -d --name postgres -p 5432:5432 \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=boilerplate \
-  postgres:14
+# Build binaries
+go build -o build/api ./cmd/api    # HTTP server only
+go build -o build/cli ./cmd/cli    # Migration/seeder only
 
-# Run migrations
-go run cmd/api/main.go migrate
-
-# Run seeders
-go run cmd/api/main.go seed
-
-# Run the application
-go run cmd/api/main.go
+# Or build all at once (into root, not recommended for this setup)
+# go build -o build/ ./cmd/...
 ```
 
-## CLI Commands
+## Database Setup
 
-### Database Migration
 ```bash
-# Run all pending migrations
-go run cmd/api/main.go migrate
+# Run all migrations (auth -> system -> master -> transaction)
+./build/cli migrate
+
+# Run specific module migration
+./build/cli migrate:auth
+./build/cli migrate:master
+./build/cli migrate:system
+./build/cli migrate:transaction
+
+# Check migration status
+./build/cli migrate:status
 
 # Rollback last migration
-go run cmd/api/main.go migrate:rollback
+./build/cli migrate:rollback
 
-# Rollback last 3 migrations
-go run cmd/api/main.go migrate:rollback 3
+# Fresh database (drop all & re-migrate)
+./build/cli migrate:fresh
 ```
 
-### Database Seeding
+## Seeding
+
 ```bash
-# Run all pending seeders
-go run cmd/api/main.go seed
+# Run all seeders
+./build/cli seed
 
-# Reset and re-run all seeders
-go run cmd/api/main.go seed:reset
+# Run specific module seeder
+./build/cli seed:auth           # Admin user
+./build/cli seed:master         # Master data (banks, provinces, etc)
+./build/cli seed:system         # System settings, roles, fees
+./build/cli seed:transaction    # Transaction data
 ```
+
+## Run Server
+
+```bash
+# Development
+./build/api
+
+# Or directly
+go run ./cmd/api
+```
+
+Server starts at `http://localhost:8080`
 
 ## API Endpoints
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/health` | Liveness probe | No |
-| GET | `/ready` | Readiness probe | No |
-| POST | `/auth/login` | Login and get JWT | No |
-| POST | `/auth/register` | Register new user | No |
-| GET | `/api/export/csv` | Export data as CSV | Yes |
-| GET | `/api/export/xlsx` | Export data as XLSX | Yes |
-| GET | `/api/export/pdf` | Export data as PDF | Yes |
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| `GET /health` | ❌ | Liveness probe |
+| `GET /ready` | ❌ | Readiness (DB check) |
+| `POST /auth/login` | ❌ | Login |
+| `POST /auth/register` | ❌ | Register |
+| `GET /auth/me` | ✅ | Current user |
+| `GET /api/master/*` | ✅ | Master data |
+| `GET /api/system/*` | ✅ | System config |
+| `POST /api/upload` | ✅ | File upload |
 
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `APP_PORT` | 8080 | Server port |
-| `APP_ENV` | development | Environment (development/production) |
-| `JWT_SECRET` | - | JWT signing secret |
-| `JWT_EXPIRY_HOURS` | 72 | Token expiry in hours |
-| `RATE_LIMIT_RPS` | 10 | Requests per second limit |
-| `RATE_LIMIT_BURST` | 20 | Burst size for rate limiter |
-| `DB_*` | - | PostgreSQL connection details |
+Create `.env` file:
+```env
+APP_PORT=8080
+APP_ENV=development
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=boilerplate
+DB_SSLMODE=disable
+
+JWT_SECRET=your-secret-key
+JWT_EXPIRY_HOURS=72
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+## Module Documentation
+
+- [Auth Module](internal/modules/auth/README.md)
+- [Master Module](internal/modules/master/README.md)
+- [System Module](internal/modules/system/README.md)
+- [Transaction Module](internal/modules/transaction/README.md)
 
 ## License
 MIT

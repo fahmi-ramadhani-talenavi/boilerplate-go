@@ -8,27 +8,30 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/user/go-boilerplate/internal/config"
-	"github.com/user/go-boilerplate/internal/handler"
 	"github.com/user/go-boilerplate/internal/middleware"
-	"github.com/user/go-boilerplate/internal/repository"
-	"github.com/user/go-boilerplate/internal/service"
+	"github.com/user/go-boilerplate/internal/modules/auth"
+	"github.com/user/go-boilerplate/internal/modules/file"
+	"github.com/user/go-boilerplate/internal/modules/health"
+	"github.com/user/go-boilerplate/internal/modules/master"
+	"github.com/user/go-boilerplate/internal/modules/system"
+	"github.com/user/go-boilerplate/internal/modules/transaction"
+	"github.com/user/go-boilerplate/pkg/cache"
 	"github.com/user/go-boilerplate/pkg/logger"
-	"github.com/user/go-boilerplate/pkg/storage"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-// Server represents the HTTP server
+// Server represents the HTTP server.
 type Server struct {
 	router     *gin.Engine
 	httpServer *http.Server
 	config     *config.Config
 	db         *gorm.DB
+	cache      *cache.Client
 }
 
-// NewServer creates a new server instance
-func NewServer(cfg *config.Config, db *gorm.DB) *Server {
-	// Set Gin mode based on environment
+// NewServer creates a new server instance.
+func NewServer(cfg *config.Config, db *gorm.DB, cache *cache.Client) *Server {
 	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -39,10 +42,11 @@ func NewServer(cfg *config.Config, db *gorm.DB) *Server {
 		router: r,
 		config: cfg,
 		db:     db,
+		cache:  cache,
 	}
 }
 
-// Setup configures middleware and routes
+// Setup configures middleware and routes using modular architecture.
 func (s *Server) Setup() {
 	// Global middleware
 	s.router.Use(middleware.Recovery())
@@ -55,57 +59,33 @@ func (s *Server) Setup() {
 		CleanupInterval:   time.Minute * 5,
 	}))
 
-	// Initialize S3 client (optional - only if configured)
-	var s3Client *storage.S3Client
-	if s.config.S3Bucket != "" && s.config.S3AccessKey != "" {
-		var err error
-		s3Client, err = storage.NewS3Client(storage.S3Config{
-			Region:    s.config.S3Region,
-			Bucket:    s.config.S3Bucket,
-			AccessKey: s.config.S3AccessKey,
-			SecretKey: s.config.S3SecretKey,
-			Endpoint:  s.config.S3Endpoint,
-		})
-		if err != nil {
-			logger.Log.Warn("Failed to initialize S3 client", zap.Error(err))
-		} else {
-			logger.Log.Info("S3 client initialized", zap.String("bucket", s.config.S3Bucket))
-		}
-	}
+	// Initialize modules
+	healthModule := health.New(s.db)
+	authModule := auth.New(s.db, s.config)
+	fileModule := file.New(s.config)
+	masterModule := master.New(s.db, s.config, s.cache)
+	systemModule := system.New(s.db, s.config)
+	transactionModule := transaction.New(s.db, s.config)
 
-	// Initialize repositories
-	userRepo := repository.NewUserRepository(s.db)
+	// JWT middleware
+	jwtMiddleware := auth.CreateJWTMiddleware(s.config)
 
-	// Initialize services
-	authService := service.NewAuthService(userRepo, s.config.JWTSecret, time.Duration(s.config.JWTExpiryHours)*time.Hour)
-
-	// Initialize and register handlers
-	healthHandler := handler.NewHealthHandler(s.db)
-	healthHandler.RegisterRoutes(s.router)
-
-	authHandler := handler.NewAuthHandler(authService)
-	authHandler.RegisterRoutes(s.router)
-
-	// JWT middleware for protected routes
-	jwtMiddleware := middleware.JWT(middleware.JWTConfig{
-		Secret:    s.config.JWTSecret,
-		SkipPaths: []string{"/health", "/ready", "/auth/login", "/auth/register"},
-	})
-
-	// Register /auth/me as protected route
-	s.router.GET("/auth/me", jwtMiddleware, authHandler.GetMe)
+	// Register module routes
+	healthModule.RegisterRoutes(s.router)
+	authModule.RegisterRoutes(s.router, jwtMiddleware)
 
 	// Protected API routes
 	api := s.router.Group("/api")
 	api.Use(jwtMiddleware)
-
-	fileHandler := handler.NewFileHandler(s3Client)
-	fileHandler.RegisterRoutes(api)
+	fileModule.RegisterRoutes(api)
+	masterModule.RegisterRoutes(api)
+	systemModule.RegisterRoutes(api)
+	transactionModule.RegisterRoutes(api)
 }
 
-// Start starts the HTTP server
+// Start starts the HTTP server.
 func (s *Server) Start() error {
-	addr := fmt.Sprintf(":%s", s.config.AppPort)
+	addr := fmt.Sprintf("%s:%s", s.config.AppHost, s.config.AppPort)
 	logger.Log.Info("Starting server", zap.String("address", addr))
 
 	s.httpServer = &http.Server{
@@ -116,7 +96,7 @@ func (s *Server) Start() error {
 	return s.httpServer.ListenAndServe()
 }
 
-// Shutdown gracefully shuts down the server
+// Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
 }
