@@ -5,14 +5,15 @@ Authentication and user management.
 ## Structure
 ```
 auth/
+├── dto/            # Data Transfer Objects
+├── entity/         # Database entities
+├── handler/        # HTTP handlers
 ├── migrations/     # sys_users table
-├── seeder/         # Admin & sample users
-├── entity.go       # User entity
-├── dto.go          # Login/Register DTOs
-├── repository.go   # User repository
-├── service.go      # Auth business logic
-├── handler.go      # HTTP handlers
-└── module.go       # Module setup
+├── repository/     # Data access layer
+├── seeder/         # Seeder logic
+├── seeders/        # SQL seed files
+├── service/        # Business logic
+└── module.go       # Module & routes setup
 ```
 
 ## Endpoints

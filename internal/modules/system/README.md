@@ -5,12 +5,12 @@ System configuration and settings.
 ## Structure
 ```
 system/
-├── migrations/     # 24 sys_* tables
-├── seeders/        # SQL seed files
+├── entity/         # System entities
+├── handler/        # API handlers
+├── migrations/     # 24+ sys_* tables
 ├── seeder/         # Seeder logic
-├── entity.go       # System entities
-├── handler.go      # API handlers
-└── module.go       # Routes setup
+├── seeders/        # SQL seed files
+└── module.go       # Module & routes setup
 ```
 
 ## Tables
